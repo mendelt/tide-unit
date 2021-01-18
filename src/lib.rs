@@ -1,11 +1,16 @@
+use std::collections::BTreeMap;
+
 use tide::Endpoint;
 
 pub fn unit<State: Clone + Send + Sync + 'static>(state: State) -> TideUnitBuilder<State> {
-    TideUnitBuilder { _state: state }
+    TideUnitBuilder { _state: state, _params: BTreeMap::new(), _query: BTreeMap::new() }
 }
 
 pub struct TideUnitBuilder<State> {
     _state: State,
+
+    _params: BTreeMap<String, String>,
+    _query: BTreeMap<String, String>,
 }
 
 impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
