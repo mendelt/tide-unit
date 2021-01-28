@@ -7,13 +7,20 @@ pub fn unit<State: Clone + Send + Sync + 'static>(state: State) -> TideUnitBuild
 }
 
 pub struct TideUnitBuilder<State> {
-    _state: State,
+    endpoint: Box<dyn Endpoint<State>>,
+    state: Option<State>,
 
     _params: BTreeMap<String, String>,
     _query: BTreeMap<String, String>,
 }
 
 impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
+    /// Set the state for the endpoint under test
+    pub fn with_state(mut self, state: State) -> Self {
+        self.state = Some(state);
+        self
+    }
+
     pub fn param(self, _param: &str, _value: &str) -> Self {
         self
     }
@@ -42,6 +49,7 @@ mod when_testing_an_endpoint {
 
     #[test]
     fn it_works() {
-        unit(()).param("param1", "value1").param("param2", "value2").query("item1", "value").test_endpoint(endpoint)
+        test(endpoint)
+            .param("param1", "value1").param("param2", "value2");
     }
 }
