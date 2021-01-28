@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
-use tide::Endpoint;
+use tide::{Endpoint, convert::Serialize};
 
-pub fn unit<State: Clone + Send + Sync + 'static>(state: State) -> TideUnitBuilder<State> {
-    TideUnitBuilder { _state: state, _params: BTreeMap::new(), _query: BTreeMap::new() }
+pub fn test<State: Clone + Send + Sync + 'static>(endpoint: impl Endpoint<State>) -> TideUnitBuilder<State> {
+    TideUnitBuilder { endpoint: Box::new(endpoint), state: None, _params: BTreeMap::new(), _query: BTreeMap::new() }
 }
 
 pub struct TideUnitBuilder<State> {
@@ -25,7 +25,8 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
         self
     }
 
-    pub fn query(self, _key: &str, _value: &str) -> Self {
+    /// Add the query string
+    pub fn with_query<T: Serialize>(self, _query: T) -> Self {
         self
     }
 
@@ -42,14 +43,22 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
 mod when_testing_an_endpoint {
     use super::*;
     use tide::{Request, Result};
+    use serde::{Serialize};
 
     async fn endpoint(_request: Request<()>) -> Result {
         Ok("result".into())
     }
 
+    #[derive(Serialize)]
+    struct Query {
+        value1: u32,
+        value2: String,
+    }
+
     #[test]
     fn it_works() {
         test(endpoint)
-            .param("param1", "value1").param("param2", "value2");
+            .param("param1", "value1").param("param2", "value2")
+            .with_query(Query {value1: 3, value2: "test".to_string()});
     }
 }
