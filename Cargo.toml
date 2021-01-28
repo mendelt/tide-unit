@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["Mendelt Siebenga <mendelt@mendelt.nl>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 tide = "0.15"
+surf = "2.1"
