@@ -1,26 +1,19 @@
 use std::collections::BTreeMap;
 
-use tide::{Endpoint, convert::Serialize};
+use tide::{Endpoint, Response, convert::Serialize};
 
 pub fn test<State: Clone + Send + Sync + 'static>(endpoint: impl Endpoint<State>) -> TideUnitBuilder<State> {
-    TideUnitBuilder { endpoint: Box::new(endpoint), state: None, _params: BTreeMap::new(), _query: BTreeMap::new() }
+    TideUnitBuilder { _endpoint: Box::new(endpoint), _params: BTreeMap::new(), _query: BTreeMap::new() }
 }
 
 pub struct TideUnitBuilder<State> {
-    endpoint: Box<dyn Endpoint<State>>,
-    state: Option<State>,
+    _endpoint: Box<dyn Endpoint<State>>,
 
     _params: BTreeMap<String, String>,
     _query: BTreeMap<String, String>,
 }
 
 impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
-    /// Set the state for the endpoint under test
-    pub fn with_state(mut self, state: State) -> Self {
-        self.state = Some(state);
-        self
-    }
-
     pub fn param(self, _param: &str, _value: &str) -> Self {
         self
     }
@@ -30,12 +23,14 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
         self
     }
 
+    /// Add request state extensions
     pub fn ext<T>(self, _ext: T) -> Self {
         self
     }
 
-    pub fn test_endpoint(&self, _endpoint: impl Endpoint<State>) {
-
+    /// Run this endpoint using the supplied state
+    pub async fn run_with(self, _state: &State) -> Response {
+        todo!();
     }
 }
 
