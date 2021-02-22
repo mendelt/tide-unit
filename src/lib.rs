@@ -1,25 +1,26 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use tide::{Endpoint, Response, convert::Serialize};
 
 pub fn test<State: Clone + Send + Sync + 'static>(endpoint: impl Endpoint<State>) -> TideUnitBuilder<State> {
-    TideUnitBuilder { _endpoint: Box::new(endpoint), _params: BTreeMap::new(), _query: BTreeMap::new() }
+    TideUnitBuilder { endpoint: Box::new(endpoint), params: Params::new(), _query: BTreeMap::new() }
 }
 
 pub struct TideUnitBuilder<State> {
-    _endpoint: Box<dyn Endpoint<State>>,
+    endpoint: Box<dyn Endpoint<State>>,
 
-    _params: BTreeMap<String, String>,
+    params: Params,
     _query: BTreeMap<String, String>,
 }
 
 impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
-    pub fn param(self, _param: &str, _value: &str) -> Self {
+    pub fn with_params(mut self, params: Params) -> Self {
+        self.params = params;
         self
     }
 
     /// Add the query string
-    pub fn with_query<T: Serialize>(self, _query: T) -> Self {
+    pub fn with_query<T: Serialize>(mut self, _query: T) -> Self {
         self
     }
 
@@ -29,10 +30,48 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
     }
 
     /// Run this endpoint using the supplied state
-    pub async fn run_with(self, _state: &State) -> Response {
+    pub async fn run_with(self, state: State) -> Response {
+        let mut server = tide::Server::with_state(state);
+
+        server.at("/").get(self.endpoint);
+
+        let client = surf::client();
+
+
         todo!();
     }
 }
+
+/// Parameters for insertion in paths
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Params(HashMap<String, String>);
+
+impl Params {
+    /// Create new params
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Insert a parameter
+    pub fn insert<P: ToString, V: ToString>(&mut self, param: P, value: V) {
+        self.0.insert(param.to_string(), value.to_string());
+    }
+}
+
+/// Construct parameters for the request
+#[macro_export]
+macro_rules! params {
+    () => {{
+        Params::new()
+    }};
+
+    ($( $param:expr => $value:expr ),+ ) => {{
+        let mut pm: Params = Params::new();
+        $(pm.insert($param.to_string(), $value);)*
+        pm
+    }};
+}
+
 
 #[cfg(test)]
 mod when_testing_an_endpoint {
@@ -53,7 +92,7 @@ mod when_testing_an_endpoint {
     #[test]
     fn it_works() {
         test(endpoint)
-            .param("param1", "value1").param("param2", "value2")
+            .with_params(params!("param1" => "value1", "param2" => "value2"))
             .with_query(Query {value1: 3, value2: "test".to_string()});
     }
 }
