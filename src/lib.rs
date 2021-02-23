@@ -1,9 +1,15 @@
 use std::collections::{BTreeMap, HashMap};
 
-use tide::{Endpoint, Response, convert::Serialize};
+use tide::{convert::Serialize, Endpoint, Response};
 
-pub fn test<State: Clone + Send + Sync + 'static>(endpoint: impl Endpoint<State>) -> TideUnitBuilder<State> {
-    TideUnitBuilder { endpoint: Box::new(endpoint), params: Params::new(), _query: BTreeMap::new() }
+pub fn test<State: Clone + Send + Sync + 'static>(
+    endpoint: impl Endpoint<State>,
+) -> TideUnitBuilder<State> {
+    TideUnitBuilder {
+        endpoint: Box::new(endpoint),
+        params: Params::new(),
+        _query: BTreeMap::new(),
+    }
 }
 
 pub struct TideUnitBuilder<State> {
@@ -20,7 +26,7 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
     }
 
     /// Add the query string
-    pub fn with_query<T: Serialize>(mut self, _query: T) -> Self {
+    pub fn with_query<T: Serialize>(self, _query: T) -> Self {
         self
     }
 
@@ -35,8 +41,7 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
 
         server.at("/").get(self.endpoint);
 
-        let client = surf::client();
-
+        let _client = surf::client();
 
         todo!();
     }
@@ -72,12 +77,11 @@ macro_rules! params {
     }};
 }
 
-
 #[cfg(test)]
 mod when_testing_an_endpoint {
     use super::*;
+    use serde::Serialize;
     use tide::{Request, Result};
-    use serde::{Serialize};
 
     async fn endpoint(_request: Request<()>) -> Result {
         Ok("result".into())
@@ -93,6 +97,9 @@ mod when_testing_an_endpoint {
     fn it_works() {
         test(endpoint)
             .with_params(params!("param1" => "value1", "param2" => "value2"))
-            .with_query(Query {value1: 3, value2: "test".to_string()});
+            .with_query(Query {
+                value1: 3,
+                value2: "test".to_string(),
+            });
     }
 }
