@@ -1,24 +1,40 @@
+//! Test Tide endpoints
+
+// Turn on warnings for some lints
+#![warn(
+    // missing_debug_implementations,
+    missing_docs,
+    trivial_casts,
+    trivial_numeric_casts,
+    unreachable_pub,
+    unused_import_braces,
+    unused_qualifications
+)]
+
 use std::collections::{BTreeMap, HashMap};
 use tide::{convert::Serialize, Endpoint};
 
+/// Test an endpoint
 pub fn test<State: Clone + Send + Sync + 'static>(
     endpoint: impl Endpoint<State>,
-) -> TideUnitBuilder<State> {
-    TideUnitBuilder {
+) -> TideTestBuilder<State> {
+    TideTestBuilder {
         endpoint: Box::new(endpoint),
         params: Params::new(),
         _query: BTreeMap::new(),
     }
 }
 
-pub struct TideUnitBuilder<State> {
+/// Builder to set up an endpoint test
+pub struct TideTestBuilder<State> {
     endpoint: Box<dyn Endpoint<State>>,
 
     params: Params,
     _query: BTreeMap<String, String>,
 }
 
-impl<State: Clone + Send + Sync + Unpin + 'static> TideUnitBuilder<State> {
+impl<State: Clone + Send + Sync + Unpin + 'static> TideTestBuilder<State> {
+    /// Set parameters for the endpoint
     pub fn with_params(mut self, params: Params) -> Self {
         self.params = params;
         self
