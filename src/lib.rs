@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
-
-use tide::{convert::Serialize, Endpoint, Response};
+use tide::{convert::Serialize, Endpoint};
 
 pub fn test<State: Clone + Send + Sync + 'static>(
     endpoint: impl Endpoint<State>,
@@ -19,7 +18,7 @@ pub struct TideUnitBuilder<State> {
     _query: BTreeMap<String, String>,
 }
 
-impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
+impl<State: Clone + Send + Sync + Unpin + 'static> TideUnitBuilder<State> {
     pub fn with_params(mut self, params: Params) -> Self {
         self.params = params;
         self
@@ -36,14 +35,14 @@ impl<State: Clone + Send + Sync + 'static> TideUnitBuilder<State> {
     }
 
     /// Run this endpoint using the supplied state
-    pub async fn run_with(self, state: State) -> Response {
+    pub async fn run_with(self, state: State) -> surf::Result<surf::Response> {
         let mut server = tide::Server::with_state(state);
 
         server.at("/").get(self.endpoint);
 
-        let _client = surf::client();
+        let client = surf::Client::with_http_client(server);
 
-        todo!();
+        client.get("http://localhost/").await
     }
 }
 
